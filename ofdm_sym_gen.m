@@ -1,4 +1,4 @@
-function [ output_args ] = ofdm_sym_gen( b,N,Ncp,mod_type,E,Ts )
+function [ z ] = ofdm_sym_gen( b,N,Ncp,mod_type,E,Ts )
 %OFDM_SYM Summary of this function goes here
 %   Detailed explanation goes here
 %   generate one ofdm symbol
@@ -10,8 +10,7 @@ function [ output_args ] = ofdm_sym_gen( b,N,Ncp,mod_type,E,Ts )
 %   E: energe per symbol?
 %   Ts: sample interval
 %map bit to decimal
-Nsym = length(b)/(N*mod_type);
-bs = reshape(b(:),log2(mod_type),N*Nsym);
+bs = reshape(b(:),log2(mod_type),N);
 sb = bi2de(bs');
 %map decimal to MQAM symbol
 %don't need to calculate k_norm here
@@ -19,6 +18,6 @@ sp = sqrt(E) * qammod(sb,mod_type,'UnitAveragePower',true);
 %ifft
 z = sqrt(N/Ts) * ifft(sp);
 %add cp
-z = [z(end-Ncp+1:end) z];
+z = [z(end-Ncp+1:end); z];
 end
 
