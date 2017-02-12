@@ -4,9 +4,9 @@ Fs = 1E6;   %ADC sample freq.
 Ts = 1/Fs;
 N0 = 2*2.07E-20; %Noise PSD(in W/Hz)
 fd = 100;   %doppler/Hz
-EbNo_dB = linspace(0,25,50);    %simulation Eb/No range
-EbNo = 10.^EbNo_dB;
-L = 10^(101/10);    %path loss
+EbN0_dB = linspace(0,25,50);    %simulation Eb/No range
+EbN0 = 10.^EbN0_dB;
+L = 10^(-101/10);    %path loss
 tau = [0 4]';
 fdTs = fd*Ts;
 P = [0.5 0.5]'; %power delay profile
@@ -20,13 +20,17 @@ Tc = 0;
 N = 64;
 Nsym = 8;
 Tsym = 0.01;    %symbol interval?
+% check setup
+if (N+Ncp)*fdTs > 0.01
+    warning('time-varing frequency response assumption invalid')
+end
 %% ofdm BER simulation
 %transmitting energy
 E = Pt * (N+Ncp) * Ts;
 %bit error counter
 err = zeros(length(EbN0),1);
 %BER simulation symbol by symbol
-for j = 1:length(EbNo)
+for j = 1:length(EbN0)
     %calculate noise power
     sigma = 0;
     for i = 1:Nsym
@@ -37,12 +41,21 @@ for j = 1:length(EbNo)
         %path loss
         ofdm_symbol = ofdm_symbol * L;
         %fading
-        [r, h] = Fading_Channel(ofdm_symbol,tau,fdTs,P);
+        [y, h] = Fading_Channel(ofdm_symbol,tau,fdTs,P);
         %add noise
-        r = r + (randn(length(r),1)*sigma + 1j * randn(length(r),1)*sigma);
+        y = y + (randn(length(y),1)*sigma + 1j * randn(length(y),1)*sigma);
         %remove cp
+        y = y(Ncp+1:end);
+        %fft
+        r = sqrt(Ts/N)*fft(y);
         %correct phase and gain
+        C = diag(fft(h(:,1),N));
+        A = 1;
         %demodulate
+        s_hat = qamdemod(A*C'*r,mod_type,'PlotConstellation',true);
+        b_hat = de2bi(s_hat,log2(mod_type));
+        b_hat = reshape(b_hat,1,[]);
         %counting error
+        err(j) = err(j) + sum(b_hat ~= b);
     end
 end
