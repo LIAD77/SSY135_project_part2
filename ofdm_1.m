@@ -33,7 +33,7 @@ err = zeros(length(EbN0),1);
 %BER simulation symbol by symbol
 for j = 1:length(EbN0)
     %calculate noise power
-    EsN0 = EbN0 * log2(mod_type);%energy per tx bit
+    EsN0 = EbN0(j) * log2(mod_type);%energy per tx bit
     sigma = sqrt(1/(EsN0*2*1));
     for i = 1:Nsym
         %bit
@@ -61,4 +61,5 @@ for j = 1:length(EbN0)
         %counting error
         err(j) = err(j) + sum(b_hat ~= b);
     end
+    err_rate = err/(Nsym * N * log2(mod_type));
 end
