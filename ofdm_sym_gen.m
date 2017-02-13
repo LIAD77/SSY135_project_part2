@@ -18,6 +18,6 @@ sp = sqrt(E) * qammod(sb,mod_type,'UnitAveragePower',true);
 %ifft
 z = sqrt(N/Ts) * ifft(sp);
 %add cp
-z = [z(end-Ncp+1:end); z];
-end
 
+z = add_cp(z, Ncp);
+end
