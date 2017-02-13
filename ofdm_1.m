@@ -47,7 +47,7 @@ for j = 1:length(EbN0)
         %add noise
         y = y + (randn(length(y),1)*sigma + 1j * randn(length(y),1)*sigma);
         %remove cp
-        y = y(end-N+1:end);
+        y = remove_cp(y, N);
         %fft
         r = sqrt(Ts/N)*fft(y);
         %correct phase and gain
