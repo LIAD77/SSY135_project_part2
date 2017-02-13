@@ -35,21 +35,28 @@ for j = 1:length(EbN0)
     %calculate noise power
     EsN0 = EbN0(j) * log2(mod_type);%energy per tx bit
     sigma = sqrt(1/(EsN0*2*1));
+    ofdm_symbol_mat = zeros(N+Ncp,Nsym);
     for i = 1:Nsym
         %bit
         b = randi([0 1],1,N*log2(mod_type));
         %ofdm generator
-        ofdm_symbol = ofdm_sym_gen(b,N,Ncp,mod_type,E,Ts );
-        %path loss
-        %ofdm_symbol = ofdm_symbol * L;
-        %fading
-        [y, h] = Fading_Channel(ofdm_symbol,tau,fdTs,P);
-        %add noise
-        y = y + (randn(length(y),1)*sigma + 1j * randn(length(y),1)*sigma);
-        %remove cp
-        y = y(end-N+1:end);
-        %fft
-        r = sqrt(Ts/N)*fft(y);
+        ofdm_symbol_mat(:,i) = ofdm_sym_gen(b,N,Ncp,mod_type,Es,Ts );
+    end
+    %path loss
+    %ofdm_symbol = ofdm_symbol * L;
+    %fading
+    ofdm_symbol = reshape(ofdm_symbol_mat,1,[]);
+    [y, h] = Fading_Channel(ofdm_symbol,tau,fdTs,P);
+    %add noise
+    y = y + (randn(length(y),1)*sigma + 1j * randn(length(y),1)*sigma);
+    %remove transient
+    y = y(1:end-max(tau));
+    y = reshape(y,N+Ncp,Nsym);
+    %demodulate each symbol
+    for i = 1:Nsym
+        %remove cp,fft
+        y_temp = y(:,i);
+        r = sqrt(Ts/N)*fft(y_temp(Ncp+1:end));
         %correct phase and gain
         C = diag(fft(h(1,:),N));
         A = 1;%how to find this?
