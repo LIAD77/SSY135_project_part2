@@ -39,7 +39,7 @@ for j = 1:length(EbN0)
         %bit
         b = randi([0 1],1,N*log2(mod_type));
         %ofdm generator
-        ofdm_symbol = ofdm_sym_gen(b,N,Ncp,mod_type,E,Ts );
+        ofdm_symbol = ofdm_sym_gen(b,N,Ncp,mod_type,Es,Ts );
         %path loss
         %ofdm_symbol = ofdm_symbol * L;
         %fading
