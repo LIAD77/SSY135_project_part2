@@ -3,7 +3,7 @@ function output = add_cp(input, prefix_length)
 % input - The input signal.
 % prefix_length - The length of the prefix .
 
-if prefix < length(input)
+if prefix_length > length(input)
     error('Cyclic prefix must be shorter than the signal length.')
 end
 
