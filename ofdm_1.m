@@ -45,11 +45,11 @@ for j = 1:length(EbN0)
         %add noise
         y = y + (randn(length(y),1)*sigma + 1j * randn(length(y),1)*sigma);
         %remove cp
-        y = y(Ncp+1:end);
+        y = y(end-N+1:end);
         %fft
         r = sqrt(Ts/N)*fft(y);
         %correct phase and gain
-        C = diag(fft(h(:,1),N));
+        C = diag(fft(h(1,:),N));
         A = 1;
         %demodulate
         s_hat = qamdemod(A*C'*r,mod_type,'PlotConstellation',true);
