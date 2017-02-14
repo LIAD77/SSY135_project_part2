@@ -10,8 +10,8 @@ function [ z ] = ofdm_sym_gen( b,N,Ncp,mod_type,E,Ts )
 %   E: energe per symbol?
 %   Ts: sample interval
 %map bit to decimal
-bs = reshape(b(:),log2(mod_type),N);
-sb = bi2de(bs');
+bs = reshape(b(:),N,log2(mod_type));
+sb = bi2de(bs);
 %map decimal to MQAM symbol
 %don't need to calculate k_norm here
 sp = sqrt(E) * qammod(sb,mod_type,'UnitAveragePower',true);

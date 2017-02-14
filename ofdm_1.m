@@ -18,7 +18,7 @@ Ncp = 8;    %twice the delay spread
 %Bc = 0;
 %Tc = 0;
 N = 64;
-Nsym = 8;
+Nsym = 200;
 %Tsym = 0.01;    %symbol interval?
 % check setup
 if (N+Ncp)*fdTs > 0.01
@@ -34,18 +34,18 @@ err = zeros(length(EbN0),1);
 for j = 1:length(EbN0)
     %calculate noise power
     EsN0 = EbN0(j) * log2(mod_type);%energy per tx bit
-    sigma = sqrt(1/(EsN0*2*1));
+    sigma = 0;%sqrt(1/(EsN0*2*1));
     ofdm_symbol_mat = zeros(N+Ncp,Nsym);
     for i = 1:Nsym
         %bit
-        b = randi([0 1],1,N*log2(mod_type));
+        b = randi([0 1],N*log2(mod_type),1);
         %ofdm generator
         ofdm_symbol_mat(:,i) = ofdm_sym_gen(b,N,Ncp,mod_type,Es,Ts );
     end
     %path loss
     %ofdm_symbol = ofdm_symbol * L;
     %fading
-    ofdm_symbol = reshape(ofdm_symbol_mat,1,[]);
+    ofdm_symbol = reshape(ofdm_symbol_mat,[],1);
     [y, h] = Fading_Channel(ofdm_symbol,tau,fdTs,P);
     %add noise
     y = y + (randn(length(y),1)*sigma + 1j * randn(length(y),1)*sigma);
@@ -58,13 +58,18 @@ for j = 1:length(EbN0)
         y_temp = y(:,i);
         r = sqrt(Ts/N)*fft(y_temp(Ncp+1:end));
         %correct phase and gain
-        C = diag(fft(h(1,:),N));
-        A = 1;%how to find this?
+        c = fft([h(1,1) 0 0 0 h(1,2)],N);
+        C = diag(c);
+        A = diag(1./(c.*conj(c)));
+        if isnan(A)
+            warning('channel gain is 0')
+        end
         %demodulate
         r_ = A*C'*r;
-        s_hat = qamdemod(r_,mod_type);
+        %scatter(real(r_),imag(r_))
+        s_hat = qamdemod(r_,mod_type,'UnitAveragePower',true);
         b_hat = de2bi(s_hat,log2(mod_type));
-        b_hat = reshape(b_hat,1,[]);
+        b_hat = reshape(b_hat,[],1);
         %counting error
         err(j) = err(j) + sum(b_hat ~= b);
     end
