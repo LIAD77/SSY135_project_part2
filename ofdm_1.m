@@ -12,7 +12,7 @@ fdTs = fd*Ts;
 P = [0.5 0.5]'; %power delay profile
 % ofdm tx setup
 %Pt = 0.1;   %tx power
-mod_type = 16;   %modulation type (4,16,64 - QAM)
+mod_type = 4;   %modulation type (4,16,64 - QAM)
 %fc = 2E9;   %carrier frequency
 Ncp = 5;    %twice the delay spread
 %Bc = 0;
@@ -25,8 +25,8 @@ if ((N+Ncp)*fdTs > 0.01 ||(N+Ncp)*Nsym>9000 )
     warning('time-varing frequency response assumption invalid')
 end
 %simulation round
-max_err_num = 500; %stop simulation when 500 bit errors
-maxNum = 500000;%or stop when reach this number of bits
+max_err_num = 100; %stop simulation when 500 bit errors
+maxNum = 100000;%or stop when reach this number of bits
 k = 1;
 %% ofdm BER simulation
 %transmitting energy
@@ -39,32 +39,28 @@ for j = 1:length(EbN0)
     %calculate noise power
     EsN0 = EbN0(j) * log2(mod_type);%energy per tx bit
     sigma = sqrt(1/(EsN0*2*1));
-    ofdm_symbol_mat = zeros(N+Ncp,Nsym);%the matrix contains Nsym ofdm symbols
+ 
     %counters
     totErr = 0; % number of errors observed
     num = 0; %number of bits processed
     while (totErr <= max_err_num || num<=maxNum)
-        %information bit matrix
+        %information bit packet
         b = randi([0 1],N*log2(mod_type),Nsym);
-        for i = 1:Nsym
-            %ofdm generator
-            ofdm_symbol_mat(:,i) = ofdm_sym_gen(b(:,i),N,Ncp,mod_type,Es,Ts);
-        end
-        %path loss
-        %ofdm_symbol = ofdm_symbol * L;
-        %fading
-        ofdm_symbol = reshape(ofdm_symbol_mat,[],1);%vector contains Nsym ofdm symbols
-        [y, h] = Fading_Channel(ofdm_symbol,tau,fdTs,P);
+        %ofdm packet
+        ofdm_packet = ofdm_pkt_gen(b,N,Ncp,Nsym,mod_type);%the matrix contains Nsym ofdm symbols
+        %fading chanel
+        tx_signal = reshape(ofdm_packet,[],1);%vector contains Nsym ofdm symbols
+        [rx_signal, h] = Fading_Channel(tx_signal,tau,fdTs,P);
         %add noise
-        y = y + (randn(length(y),1)*sigma + 1j * randn(length(y),1)*sigma);%the noise's amplitude is too small
+        rx_signal = rx_signal + sigma*(randn(length(rx_signal),1) + 1j * randn(length(rx_signal),1));
         %remove transient
-        y = y(1:end-max(tau));
-        y = reshape(y,N+Ncp,Nsym);
+        rx_signal = rx_signal(1:end-max(tau));
+        rx_signal = reshape(rx_signal,N+Ncp,Nsym);
         Err_per_b_mat = 0;
         %demodulate each symbol
         for i = 1:Nsym
             %remove cp,fft
-            y_temp = y(:,i);
+            y_temp = rx_signal(:,i);
             r = sqrt(1/N)*fft(y_temp(Ncp+1:end));
             %correct phase and gain
             c = fft([h(1 + (i-1)*(Ncp+N),1) 0 0 0 h(1 + (i-1)*(Ncp+N),2)],N);
