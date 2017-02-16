@@ -18,7 +18,7 @@ Ncp = 5;    %twice the delay spread
 %Bc = 0;
 %Tc = 0;
 N = 64;
-Nsym = 100;%number of ofdm symbols in one packet
+Nsym = 1;%number of ofdm symbols in one packet
 %Tsym = 0.01;    %symbol interval?
 % check setup
 if ((N+Ncp)*fdTs > 0.01 ||(N+Ncp)*Nsym>9000 )
@@ -26,21 +26,24 @@ if ((N+Ncp)*fdTs > 0.01 ||(N+Ncp)*Nsym>9000 )
 end
 %simulation round
 max_err_num = 500; %stop simulation when 500 bit errors
-max_symbol_num = 200*10000;%or stop when reach this number of symbols
+maxNum = 500000;%or stop when reach this number of bits
 k = 1;
 %% ofdm BER simulation
 %transmitting energy
 %E = Pt * (N+Ncp) * Ts;
 Es = 1; %fix the Es, change N0
 %bit error counter
-err = zeros(length(EbN0),1);
+BER = zeros(length(EbN0),1);
 %BER simulation symbol by symbol
 for j = 1:length(EbN0)
     %calculate noise power
     EsN0 = EbN0(j) * log2(mod_type);%energy per tx bit
     sigma = sqrt(1/(EsN0*2*1));
     ofdm_symbol_mat = zeros(N+Ncp,Nsym);%the matrix contains Nsym ofdm symbols
-    while (err(j) <= max_err_num || k<=max_symbol_num)
+    %counters
+    totErr = 0; % number of errors observed
+    num = 0; %number of bits processed
+    while (totErr <= max_err_num || num<=maxNum)
         %information bit matrix
         b = randi([0 1],N*log2(mod_type),Nsym);
         for i = 1:Nsym
@@ -57,6 +60,7 @@ for j = 1:length(EbN0)
         %remove transient
         y = y(1:end-max(tau));
         y = reshape(y,N+Ncp,Nsym);
+        Err_per_b_mat = 0;
         %demodulate each symbol
         for i = 1:Nsym
             %remove cp,fft
@@ -75,10 +79,11 @@ for j = 1:length(EbN0)
             s_hat = qamdemod(r_,mod_type,'UnitAveragePower',true);
             b_hat = de2bi(s_hat,log2(mod_type));
             b_hat = reshape(b_hat,[],1);
-            %counting error
-            err(j) = err(j) + sum(b_hat ~= b(:,i));
+            %counting error per ofdm symbol
+            Err_per_b_mat = Err_per_b_mat + sum(b_hat ~= b(:,i));
         end
-        k = k + Nsym;
+        totErr = totErr + Err_per_b_mat;
+        num = num + numel(b);
     end
-    err_rate = err/(Nsym * N * log2(mod_type));
+    BER(j) = totErr/num;
 end
