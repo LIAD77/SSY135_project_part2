@@ -16,7 +16,7 @@ sb = bi2de(bs);
 %don't need to calculate k_norm here
 sp = sqrt(E) * qammod(sb,mod_type,'UnitAveragePower',true);
 %ifft
-z = sqrt(N/Ts) * ifft(sp);
+z = sqrt(N) * ifft(sp);
 %add cp
 z = [z(end-Ncp+1:end); z];
 end

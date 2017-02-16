@@ -26,7 +26,7 @@ if ((N+Ncp)*fdTs > 0.01 ||(N+Ncp)*Nsym>9000 )
 end
 %simulation round
 max_err_num = 500; %stop simulation when 500 bit errors
-max_symbol_num = 200;%or stop when reach this number of symbols
+max_symbol_num = 200*10000;%or stop when reach this number of symbols
 k = 1;
 %% ofdm BER simulation
 %transmitting energy
@@ -40,7 +40,7 @@ for j = 1:length(EbN0)
     EsN0 = EbN0(j) * log2(mod_type);%energy per tx bit
     sigma = sqrt(1/(EsN0*2*1));
     ofdm_symbol_mat = zeros(N+Ncp,Nsym);%the matrix contains Nsym ofdm symbols
-    %while (err(j) <= max_err_num || k<=max_symbol_num)
+    while (err(j) <= max_err_num || k<=max_symbol_num)
         %information bit matrix
         b = randi([0 1],N*log2(mod_type),Nsym);
         for i = 1:Nsym
@@ -61,7 +61,7 @@ for j = 1:length(EbN0)
         for i = 1:Nsym
             %remove cp,fft
             y_temp = y(:,i);
-            r = sqrt(Ts/N)*fft(y_temp(Ncp+1:end));
+            r = sqrt(1/N)*fft(y_temp(Ncp+1:end));
             %correct phase and gain
             c = fft([h(1 + (i-1)*(Ncp+N),1) 0 0 0 h(1 + (i-1)*(Ncp+N),2)],N);
             C = diag(c);
@@ -79,6 +79,6 @@ for j = 1:length(EbN0)
             err(j) = err(j) + sum(b_hat ~= b(:,i));
         end
         k = k + Nsym;
-    %end
+    end
     err_rate = err/(Nsym * N * log2(mod_type));
 end
