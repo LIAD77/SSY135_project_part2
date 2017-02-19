@@ -5,7 +5,7 @@ Fs = 1E6;   %ADC sample freq.
 Ts = 1/Fs;
 %N0 = 2*2.07E-20; %Noise PSD(in W/Hz)
 fd = 100;   %doppler/Hz
-EbN0_dB = linspace(0,25,50);    %simulation Eb/No range
+EbN0_dB = linspace(0,20,50);    %simulation Eb/No range
 EbN0 = 10.^(EbN0_dB/10);
 %L = 10^(-101/10);    %path loss
 tau = [0 4]';
@@ -29,7 +29,7 @@ if ((N+Ncp)*fdTs > 0.01 ||(N+Ncp)*Nsym>9000 )
     warning('time-varing frequency response assumption invalid')
 end
 %simulation round
-max_err_num = 100; %stop simulation when 500 bit errors
+max_err_num = 100; %stop simulation when 100 bit errors
 maxNum = 100000;%or stop when reach this number of bits
 k = 1;
 %% ofdm BER simulation
@@ -42,7 +42,7 @@ BER = zeros(length(EbN0),1);
 for j = 1:length(EbN0)
     %calculate noise power
     EsN0 = EbN0(j) * log2(mod_type);%energy per info bit
-    sigma = sqrt(1/(EsN0*2*1 * r1 *r2));
+    sigma = sqrt(1/(EsN0*2*1 * r1));
     N0 = sigma^2*2;
     %counters
     totErr = 0; % number of errors observed
