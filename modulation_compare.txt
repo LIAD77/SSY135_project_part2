@@ -1,0 +1,4 @@
+modulation: Rx EbN0,data rate,error rate at Rx EbN0
+QPSK: 19.65dB,1.95M, 3E-3
+16QAM: 16.64dB,3.85M  5.5E-3
+64QAM: 14.88dB,5.77M 3.2E-2
