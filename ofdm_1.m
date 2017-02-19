@@ -1,3 +1,4 @@
+%simulation of coded OFDM transmission:
 %% define constants
 % channel
 Fs = 1E6;   %ADC sample freq.
@@ -12,13 +13,15 @@ fdTs = fd*Ts;
 P = [0.5 0.5]'; %power delay profile
 % ofdm tx setup
 %Pt = 0.1;   %tx power
-mod_type = 64;   %modulation type (4,16,64 - QAM)
+mod_type = 4;   %modulation type (4,16,64 - QAM)
 %fc = 2E9;   %carrier frequency
 Ncp = 5;    %twice the delay spread
 %Bc = 0;
 %Tc = 0;
 N = 128;
 r1 = N/(N+Ncp); % the effective power
+diversity = 3;
+r2 = 1/diversity; %code rate
 Nsym = 1;%number of ofdm symbols in one packet
 %Tsym = 0.01;    %symbol interval?
 % check setup
@@ -38,47 +41,60 @@ BER = zeros(length(EbN0),1);
 %BER simulation symbol by symbol
 for j = 1:length(EbN0)
     %calculate noise power
-    EsN0 = EbN0(j) * log2(mod_type) * r1;%energy per tx bit
-    sigma = sqrt(1/(EsN0*2*1));
- 
+    EsN0 = EbN0(j) * log2(mod_type);%energy per info bit
+    sigma = sqrt(1/(EsN0*2*1 * r1 *r2));
+    N0 = sigma^2*2;
     %counters
     totErr = 0; % number of errors observed
     num = 0; %number of bits processed
     while (totErr <= max_err_num || num<=maxNum)
         %information bit packet
-        b = randi([0 1],N*log2(mod_type),Nsym);
+        b = randi([0 1],N*log2(mod_type),1);
         %ofdm packet
-        ofdm_packet = ofdm_pkt_gen(b,N,Ncp,Nsym,mod_type);%the matrix contains Nsym ofdm symbols
+        ofdm_symbol = r2 * ofdm_sym_gen(b,N,Ncp,mod_type);%equally divide the tx power to 3 ofdm symbols
         %fading chanel
-        tx_signal = reshape(ofdm_packet,[],1);%vector contains Nsym ofdm symbols
-        [rx_signal, h] = Fading_Channel(tx_signal,tau,fdTs,P);
+        rx_signal = zeros(length(ofdm_symbol)+max(tau),diversity); % the tx signal (each column is a branch)
+        h = zeros(2,diversity); %the inpulse response of each branch
+        for branch = 1:diversity
+            [rx_signal(:,branch), h_temp] = Fading_Channel(ofdm_symbol,tau,fdTs,P);
+            h(:,branch) = transpose(h_temp(1,:));
+        end
         %add noise
-        rx_signal = rx_signal + sigma*(randn(length(rx_signal),1) + 1j * randn(length(rx_signal),1));
+        rx_signal = rx_signal + sigma*(randn(size(rx_signal)) + 1j * randn(size(rx_signal)));
         %remove transient
-        rx_signal = rx_signal(1:end-max(tau));
-        rx_signal = reshape(rx_signal,N+Ncp,Nsym);
+        rx_signal = rx_signal(1:end-max(tau),:);
+        %remove cp
+        rx_signal = rx_signal(Ncp+1:end,:);
+        %fft
+        y = sqrt(1/N)*fft(rx_signal);
         Err_per_b_mat = 0;
-        %demodulate each symbol
-        for i = 1:Nsym
-            %remove cp,fft
-            y_temp = rx_signal(:,i);
-            r = sqrt(1/N)*fft(y_temp(Ncp+1:end));
-            %correct phase and gain
-            c = fft([h(1 + (i-1)*(Ncp+N),1) 0 0 0 h(1 + (i-1)*(Ncp+N),2)],N);
-            C = diag(c);
-            A = diag(1./(c.*conj(c)));
-            if isnan(A)
+        %initialize some variables
+        c = zeros(size(y)); %the frequency response of each branch
+        for i = 1:diversity
+            c(:,i) = fft([h(1,i) 0 0 0 h(2,i)],N);
+        end
+        mrc_r = zeros(N,1);%MRC cofficients
+        A = zeros(N,1);%scaling factor
+        r_ = zeros(N,1); %after MRC
+        %MRC and decoding
+        for i = 1:diversity
+            mrc_r = conj(c(:,i)) ;%./ (c(:,i).*conj(c(:,i)));
+            A = A + r2 * c(:,i).*conj(c(:,i));
+            if isnan(mrc_r)
                 warning('channel gain is 0')
             end
-            %demodulate
-            r_ = A*C'*r;
+            %MRC
+            r_ = r_ + mrc_r .* y(:,i);
             %scatter(real(r_),imag(r_))
-            s_hat = qamdemod(r_,mod_type,'UnitAveragePower',true);
-            b_hat = de2bi(s_hat,log2(mod_type));
-            b_hat = reshape(b_hat,[],1);
-            %counting error per ofdm symbol
-            Err_per_b_mat = Err_per_b_mat + sum(b_hat ~= b(:,i));
         end
+        r_ = r_ ./ A;
+        %scaling factor
+        s_hat = qamdemod(r_,mod_type,'UnitAveragePower',true);
+        b_hat = de2bi(s_hat,log2(mod_type));
+        b_hat = reshape(b_hat,[],1);
+        %counting error per ofdm symbol
+        Err_per_b_mat = Err_per_b_mat + sum(b_hat ~= b);
+        
         totErr = totErr + Err_per_b_mat;
         num = num + numel(b);
     end
