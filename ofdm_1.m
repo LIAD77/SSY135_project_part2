@@ -12,12 +12,13 @@ fdTs = fd*Ts;
 P = [0.5 0.5]'; %power delay profile
 % ofdm tx setup
 %Pt = 0.1;   %tx power
-mod_type = 4;   %modulation type (4,16,64 - QAM)
+mod_type = 64;   %modulation type (4,16,64 - QAM)
 %fc = 2E9;   %carrier frequency
 Ncp = 5;    %twice the delay spread
 %Bc = 0;
 %Tc = 0;
-N = 64;
+N = 128;
+r1 = N/(N+Ncp); % the effective power
 Nsym = 1;%number of ofdm symbols in one packet
 %Tsym = 0.01;    %symbol interval?
 % check setup
@@ -37,7 +38,7 @@ BER = zeros(length(EbN0),1);
 %BER simulation symbol by symbol
 for j = 1:length(EbN0)
     %calculate noise power
-    EsN0 = EbN0(j) * log2(mod_type);%energy per tx bit
+    EsN0 = EbN0(j) * log2(mod_type) * r1;%energy per tx bit
     sigma = sqrt(1/(EsN0*2*1));
  
     %counters
