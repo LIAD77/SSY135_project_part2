@@ -25,11 +25,13 @@ channels = floor(1 / 50 / fdTs - prefix_length);
 modulation_order = 16;
 num_symbols = 10 * channels;
 
+% Repetition code repetitions
+repetitions = 3;
+
 % Simulation Eb/No range
-EbN0_sequence = [0:1:25];
-EbN0_sequence = [0:1:2];
+EbN0_sequence = [15:1:25];
 BER = zeros(size(EbN0_sequence));
-MAX_RUNS = 1e5;
+MAX_RUNS = 1e6;
 MAX_ERRORS = 1e5;
 
 for EbN0_index = 1:length(EbN0_sequence)
@@ -46,7 +48,7 @@ for EbN0_index = 1:length(EbN0_sequence)
         symbols_tx = qammod(bits_tx, modulation_order, 'InputType', 'bit', 'UnitAveragePower', true);
 
         % Encode with a repetition coder
-        coded_tx = repenc(symbols_tx, 1);
+        coded_tx = repenc(symbols_tx, repetitions);
 
         % Separate the input symbols into channels
         parallel_tx = parallelize(coded_tx, channels);
@@ -130,7 +132,7 @@ for EbN0_index = 1:length(EbN0_sequence)
         channel_gain = serialize(channel_gain);
 
         % Decode the repetition code
-        symbols_rx = repdec(coded_rx, 1, channel_gain);
+        symbols_rx = repdec(coded_rx, repetitions, channel_gain);
 
         % Demodulate into a bit sequence
         bits_rx = qamdemod(symbols_rx, modulation_order, 'OutputType', 'bit');
@@ -139,13 +141,19 @@ for EbN0_index = 1:length(EbN0_sequence)
         % Compute the error rate
         iteration_errors = iteration_errors + sum(abs(bits_tx - bits_rx) ~= 0);
     end
+    % figure; hold on;
+    % plot(real(symbols_tx), imag(symbols_tx), 'bo')
+    % plot(real(coded_rx), imag(coded_rx), 'bo')
+    % plot(real(symbols_rx), imag(symbols_rx), 'r.')
+    % grid on; hold off;
 
+    return
     BER(EbN0_index) = iteration_errors / (iteration_count * length(bits_tx));
 end
 
-figure;
-plot(BER)
-grid on;
+filename = strcat(num2str(modulation_order), '_', num2str(repetitions), '.mat');
+save(strcat('BER', filename), 'BER');
+save(strcat('EbN0', filename), 'EbN0_sequence');
 return
 
 % Plot the results
