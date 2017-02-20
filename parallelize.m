@@ -14,7 +14,9 @@ end
 
 % Append zeroes if the numel of the input is not a multiple of the
 % number of channels.
-serial = [serial ; zeros(channels - mod(numel(serial), channels), 1)];
+if mod(numel(serial) / channels, 1) ~= 0
+    serial = [serial ; zeros(channels - mod(numel(serial), channels), 1)];
+end
 parallel = reshape(serial, channels, numel(serial) / channels);
 
 end
