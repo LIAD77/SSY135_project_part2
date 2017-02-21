@@ -29,10 +29,10 @@ num_symbols = 10 * channels;
 repetitions = 3;
 
 % Simulation Eb/No range
-EbN0_sequence = [15:1:25];
+EbN0_sequence = [0:1:25];
 BER = zeros(size(EbN0_sequence));
-MAX_RUNS = 1e6;
-MAX_ERRORS = 1e5;
+MAX_RUNS = 1e5;
+MAX_ERRORS = 1e2;
 
 for EbN0_index = 1:length(EbN0_sequence)
     disp(['Running simulation for ', num2str(EbN0_sequence(EbN0_index)), 'dB.'])
@@ -74,7 +74,8 @@ for EbN0_index = 1:length(EbN0_sequence)
                                                        power_delay_profile);
         % Add noise
         EbN0 = EbN0_sequence(EbN0_index);
-        channel_output = add_awgn(channel_output, EbN0, channels / (prefix_length + channels), log2(modulation_order));
+        rate = 1 / repetitions * channels / (prefix_length + channels);
+        channel_output = add_awgn(channel_output, EbN0, rate, log2(modulation_order));
 
         % Remove the max_delay last symbols
         channel_output = channel_output(1:end - max_delay, :);
@@ -135,7 +136,8 @@ for EbN0_index = 1:length(EbN0_sequence)
         symbols_rx = repdec(coded_rx, repetitions, channel_gain);
 
         % Demodulate into a bit sequence
-        bits_rx = qamdemod(symbols_rx, modulation_order, 'OutputType', 'bit');
+        bits_rx = qamdemod(symbols_rx, modulation_order, 'OutputType', 'bit', ...
+                           'UnitAveragePower', true);
         bits_rx = bits_rx(1:length(bits_tx));
 
         % Compute the error rate
@@ -147,7 +149,6 @@ for EbN0_index = 1:length(EbN0_sequence)
     % plot(real(symbols_rx), imag(symbols_rx), 'r.')
     % grid on; hold off;
 
-    return
     BER(EbN0_index) = iteration_errors / (iteration_count * length(bits_tx));
 end
 
