@@ -21,11 +21,14 @@ if size(coded) ~= size(gain)
 end
 
 deinterleaved = reshape(coded, numel(coded) / repetitions, repetitions);
-gain = reshape(gain, repetitions, numel(gain) / repetitions);
+gain = reshape(gain, numel(gain) / repetitions, repetitions);
 decoded = zeros(numel(coded) / repetitions, 1);
 for index = 1:size(deinterleaved, 1)
-    decoded(index) = deinterleaved(index, :) * gain(:, index);
-    decoded(index) = decoded(index) ./ sum(gain(:, index));
+    % gain(index, :)
+    % deinterleaved(index, :)
+    % deinterleaved(index, :) * gain(index, :)' / sum(gain(index, :))
+    % pause(1)
+    decoded(index) = deinterleaved(index, :) * gain(index, :)' / sum(gain(index, :));
 end
 
 end

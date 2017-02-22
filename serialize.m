@@ -4,5 +4,6 @@ function serial = serialize(parallel)
 % parallel - Input matrix.
 
 serial = reshape(parallel, numel(parallel), 1);
+% serial = reshape(parallel', numel(parallel), 1);
 
 end

@@ -18,5 +18,6 @@ if mod(numel(serial) / channels, 1) ~= 0
     serial = [serial ; zeros(channels - mod(numel(serial), channels), 1)];
 end
 parallel = reshape(serial, channels, numel(serial) / channels);
+% parallel = reshape(serial, numel(serial) / channels, channels)';
 
 end
