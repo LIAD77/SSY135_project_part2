@@ -19,7 +19,7 @@ prefix_length = max_delay + 1;
 power_delay_profile = [0.5 0.5]';
 
 % Set the number of channels
-channels = floor(1 / 50 / fdTs - prefix_length);
+channels = 128;%floor(1 / 50 / fdTs - prefix_length);
 
 % The number of symbols
 modulation_order = 4;
