@@ -30,7 +30,7 @@ num_symbols = ofdm_symbols * channels;
 repetitions = 3;
 
 % Simulation Eb/No range
-EbN0_sequence = [0:1:25];
+EbN0_sequence = [0:1:20];
 BER = zeros(size(EbN0_sequence));
 MIN_RUNS = 1e1;
 MIN_ERRORS = 1e2;
