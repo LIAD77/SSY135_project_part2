@@ -1,4 +1,4 @@
-clear; close;
+% clear; close;
 
 % ADC sample frequency
 Fs = 1e6;
@@ -13,7 +13,7 @@ tap_delay = [0 4]';
 max_delay = max(tap_delay);
 
 % Set the cyclic prefix length
-prefix_length = max_delay;
+prefix_length = max_delay + 1;
 
 % Power delay profile
 power_delay_profile = [0.5 0.5]';
@@ -22,8 +22,9 @@ power_delay_profile = [0.5 0.5]';
 channels = floor(1 / 50 / fdTs - prefix_length);
 
 % The number of symbols
-modulation_order = 16;
-num_symbols = 10 * channels;
+modulation_order = 4;
+ofdm_symbols = 200;
+num_symbols = ofdm_symbols * channels;
 
 % Repetition code repetitions
 repetitions = 3;
@@ -31,14 +32,14 @@ repetitions = 3;
 % Simulation Eb/No range
 EbN0_sequence = [0:1:25];
 BER = zeros(size(EbN0_sequence));
-MAX_RUNS = 1e5;
-MAX_ERRORS = 1e2;
+MIN_RUNS = 1e1;
+MIN_ERRORS = 1e2;
 
 for EbN0_index = 1:length(EbN0_sequence)
     disp(['Running simulation for ', num2str(EbN0_sequence(EbN0_index)), 'dB.'])
     iteration_count = 0;
     iteration_errors = 0;
-    while iteration_count < MAX_RUNS && iteration_errors < MAX_ERRORS
+    while iteration_count < MIN_RUNS || iteration_errors < MIN_ERRORS
         iteration_count = iteration_count + 1;
 
         % Generate random input
@@ -74,7 +75,7 @@ for EbN0_index = 1:length(EbN0_sequence)
                                                        power_delay_profile);
         % Add noise
         EbN0 = EbN0_sequence(EbN0_index);
-        rate = 1 / repetitions * channels / (prefix_length + channels);
+        rate = (1 / repetitions) * (channels / (prefix_length + channels));
         channel_output = add_awgn(channel_output, EbN0, rate, log2(modulation_order));
 
         % Remove the max_delay last symbols
@@ -121,7 +122,6 @@ for EbN0_index = 1:length(EbN0_sequence)
             % Compute the amplitude correction matrix
             signal_amplitude = diag(phase_correction_matrix' * phase_correction_matrix);
             amplitude_correction_matrix = diag(1 ./ signal_amplitude);
-
             channel_gain(:, col) = signal_amplitude;
 
             parallel_rx(:, col) = phase_correction_matrix' * parallel_rx(:, col);
@@ -142,13 +142,15 @@ for EbN0_index = 1:length(EbN0_sequence)
 
         % Compute the error rate
         iteration_errors = iteration_errors + sum(abs(bits_tx - bits_rx) ~= 0);
+        % iteration_errors / length(bits_tx)
+        % return
     end
+
     % figure; hold on;
     % plot(real(symbols_tx), imag(symbols_tx), 'bo')
     % plot(real(coded_rx), imag(coded_rx), 'bo')
     % plot(real(symbols_rx), imag(symbols_rx), 'r.')
     % grid on; hold off;
-
     BER(EbN0_index) = iteration_errors / (iteration_count * length(bits_tx));
 end
 
@@ -156,24 +158,3 @@ filename = strcat(num2str(modulation_order), '_', num2str(repetitions), '.mat');
 save(strcat('BER', filename), 'BER');
 save(strcat('EbN0', filename), 'EbN0_sequence');
 return
-
-% Plot the results
-% TODO: Remove
-figure; hold on;
-
-subplot(2,2,1); hold on;
-plot(real(symbols_tx), imag(symbols_tx), 'b.')
-plot(real(symbols_rx), imag(symbols_rx), 'ro')
-legend('Transmitted Symbols', 'Received Symbols')
-grid on; hold off;
-
-subplot(2,2,2); hold on;
-plot(abs(channel_input(1:channels + prefix_length)))
-plot(abs(channel_output(1:channels + prefix_length)))
-legend('Transmitted Signal', 'Received Signal')
-grid on; hold off;
-
-subplot(2,2,3); hold on;
-plot(abs(parallel_tx(:, 1)))
-plot(abs(parallel_rx(:, 1)))
-grid on; hold off;
