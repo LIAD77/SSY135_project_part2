@@ -22,7 +22,7 @@ power_delay_profile = [0.5 0.5]';
 channels = 128;%floor(1 / 50 / fdTs - prefix_length);
 
 % The number of symbols
-modulation_order = 4;
+modulation_order = 16;
 ofdm_symbols = 200;
 num_symbols = ofdm_symbols * channels;
 
@@ -30,9 +30,9 @@ num_symbols = ofdm_symbols * channels;
 repetitions = 3;
 
 % Simulation Eb/No range
-EbN0_sequence = [0:1:20];
+EbN0_sequence = 16.88;
 BER = zeros(size(EbN0_sequence));
-MIN_RUNS = 1e1;
+MIN_RUNS = 1e2;
 MIN_ERRORS = 1e2;
 
 for EbN0_index = 1:length(EbN0_sequence)
