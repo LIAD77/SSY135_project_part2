@@ -102,12 +102,12 @@ for EbN0_index = 1:length(EbN0_sequence)
             % Verify that the rows of the tap process corresponding to this OFDM symbol are equal
             first_row = 1 + (channels + prefix_length) * (col - 1);
             last_row = 1 + (channels + prefix_length) * col;
-            for row = first_row:last_row
-                if sum(abs(tap_process(row, :) - tap_process(first_row, :)) > eps) > 10
-                    error('Not all rows of the tap process are equal!')
-                end
-            end
-
+%             for row = first_row:last_row
+%                 if sum(abs(tap_process(row, :) - tap_process(first_row, :)) > eps) > 10
+%                     error('Not all rows of the tap process are equal!')
+%                 end
+%             end
+%           since it does't throw any error up to now, I remove it for performance
             % Compute the channel impulse response for this OFDM symbols from the tap process
             channel_response = zeros(1, max_delay);
             for index = 1:length(tap_delay)
