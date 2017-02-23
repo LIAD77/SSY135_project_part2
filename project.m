@@ -27,13 +27,13 @@ ofdm_symbols = 200;
 num_symbols = ofdm_symbols * channels;
 
 % Repetition code repetitions
-repetitions = 3;
+repetitions = 2;
 
 % Simulation Eb/No range
-EbN0_sequence = 16.88;
+EbN0_sequence = 0:1:20;
 BER = zeros(size(EbN0_sequence));
-MIN_RUNS = 1e2;
-MIN_ERRORS = 1e2;
+MIN_RUNS = 2e2;
+MIN_ERRORS = 2e2;
 
 for EbN0_index = 1:length(EbN0_sequence)
     disp(['Running simulation for ', num2str(EbN0_sequence(EbN0_index)), 'dB.'])
