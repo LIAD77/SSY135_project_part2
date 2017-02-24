@@ -19,27 +19,30 @@ prefix_length = max_delay + 1;
 power_delay_profile = [0.5 0.5]';
 
 % Set the number of channels
-channels = floor(1 / 50 / fdTs - prefix_length);
+% channels = floor(1 / 50 / fdTs - prefix_length);
+channels = 128;
 
 % The number of symbols
-modulation_order = 4;
+% modulation_order = 4;
 ofdm_symbols = 200;
 num_symbols = ofdm_symbols * channels;
+num_bits = num_symbols * log2(modulation_order);
 
 % Repetition code repetitions
-repetitions = 3;
+% repetitions = 3;
 
 % Simulation Eb/No range
-EbN0_sequence = [0:1:25];
+EbN0_sequence = [0:1:20];
 BER = zeros(size(EbN0_sequence));
-MIN_RUNS = 1e1;
-MIN_ERRORS = 1e2;
+MIN_RUNS = 1e2;
+MAX_RUNS = 1e6;
+MIN_ERRORS = 5e2;
 
-for EbN0_index = 1:length(EbN0_sequence)
+parfor EbN0_index = 1:length(EbN0_sequence)
     disp(['Running simulation for ', num2str(EbN0_sequence(EbN0_index)), 'dB.'])
     iteration_count = 0;
     iteration_errors = 0;
-    while iteration_count < MIN_RUNS || iteration_errors < MIN_ERRORS
+    while (iteration_count < MIN_RUNS || iteration_errors < MIN_ERRORS) && iteration_count < MAX_RUNS
         iteration_count = iteration_count + 1;
 
         % Generate random input
@@ -142,16 +145,16 @@ for EbN0_index = 1:length(EbN0_sequence)
 
         % Compute the error rate
         iteration_errors = iteration_errors + sum(abs(bits_tx - bits_rx) ~= 0);
-        % iteration_errors / length(bits_tx)
-        % return
+
+        if mod(iteration_count, 1000) == 0
+            disp(['Iteration ' num2str(iteration_count), ' finished with a BER of ', ...
+                  num2str(iteration_errors / length(bits_tx))])
+        end
     end
 
-    % figure; hold on;
-    % plot(real(symbols_tx), imag(symbols_tx), 'bo')
-    % plot(real(coded_rx), imag(coded_rx), 'bo')
-    % plot(real(symbols_rx), imag(symbols_rx), 'r.')
-    % grid on; hold off;
-    BER(EbN0_index) = iteration_errors / (iteration_count * length(bits_tx));
+    disp(['Simulation finished with a BER of ', ...
+          num2str(iteration_errors / (iteration_count * num_bits))])
+    BER(EbN0_index) = iteration_errors / (iteration_count * num_bits);
 end
 
 filename = strcat(num2str(modulation_order), '_', num2str(repetitions), '.mat');
