@@ -19,16 +19,24 @@ prefix_length = max_delay + 1;
 power_delay_profile = [0.5 0.5]';
 
 % Set the number of channels
+<<<<<<< HEAD
 % channels = floor(1 / 50 / fdTs - prefix_length);
 channels = 128;
 
 % The number of symbols
 % modulation_order = 4;
+=======
+channels = 128;%floor(1 / 50 / fdTs - prefix_length);
+
+% The number of symbols
+modulation_order = 16;
+>>>>>>> 1854735854149c4789363705da7b8638facf685a
 ofdm_symbols = 200;
 num_symbols = ofdm_symbols * channels;
 num_bits = num_symbols * log2(modulation_order);
 
 % Repetition code repetitions
+<<<<<<< HEAD
 % repetitions = 3;
 
 % Simulation Eb/No range
@@ -37,6 +45,15 @@ BER = zeros(size(EbN0_sequence));
 MIN_RUNS = 1e2;
 MAX_RUNS = 1e6;
 MIN_ERRORS = 5e2;
+=======
+repetitions = 2;
+
+% Simulation Eb/No range
+EbN0_sequence = 0:1:20;
+BER = zeros(size(EbN0_sequence));
+MIN_RUNS = 2e2;
+MIN_ERRORS = 2e2;
+>>>>>>> 1854735854149c4789363705da7b8638facf685a
 
 parfor EbN0_index = 1:length(EbN0_sequence)
     disp(['Running simulation for ', num2str(EbN0_sequence(EbN0_index)), 'dB.'])
@@ -105,12 +122,12 @@ parfor EbN0_index = 1:length(EbN0_sequence)
             % Verify that the rows of the tap process corresponding to this OFDM symbol are equal
             first_row = 1 + (channels + prefix_length) * (col - 1);
             last_row = 1 + (channels + prefix_length) * col;
-            for row = first_row:last_row
-                if sum(abs(tap_process(row, :) - tap_process(first_row, :)) > eps) > 10
-                    error('Not all rows of the tap process are equal!')
-                end
-            end
-
+%             for row = first_row:last_row
+%                 if sum(abs(tap_process(row, :) - tap_process(first_row, :)) > eps) > 10
+%                     error('Not all rows of the tap process are equal!')
+%                 end
+%             end
+%           since it does't throw any error up to now, I remove it for performance
             % Compute the channel impulse response for this OFDM symbols from the tap process
             channel_response = zeros(1, max_delay);
             for index = 1:length(tap_delay)
